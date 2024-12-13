@@ -1,4 +1,7 @@
-# Define file names for results
+# Set the directory to scan
+$taskDir = "C:\Windows\System32\Tasks"
+
+# Define output files
 $commandsFile = ".\commands.txt"
 $argumentsFile = ".\arguments.txt"
 $actionsFile = ".\actions.txt"
@@ -6,35 +9,44 @@ $actionsFile = ".\actions.txt"
 # Clear previous output
 Remove-Item $commandsFile, $argumentsFile, $actionsFile -ErrorAction SilentlyContinue
 
-# Get all scheduled tasks
-$tasks = Get-ScheduledTask
+# Loading sequence
+Write-Host "Scanning tasks in $taskDir and subfolders..." -ForegroundColor Yellow
+$counter = 0
 
-foreach ($task in $tasks) {
-    $taskName = $task.TaskName
+# Function to process tasks in a folder
+function Process-Tasks($folder) {
+    $tasks = Get-ChildItem -Path $folder -Recurse -File
 
-    # Get task actions
-    $taskActions = (Get-ScheduledTask -TaskName $taskName).Actions
+    foreach ($taskFile in $tasks) {
+        try {
+            $task = Register-ScheduledTask -Xml (Get-Content $taskFile.FullName | Out-String) -TaskName "TempTask" -WhatIf -PassThru
+            foreach ($action in $task.Actions) {
+                $counter++
+                # Log the executable (commands)
+                if ($action.Execute) {
+                    Add-Content -Path $commandsFile -Value "$($taskFile.Name) -> $($action.Execute)"
+                }
 
-    foreach ($action in $taskActions) {
-        if ($action -is [Microsoft.Management.Infrastructure.CimInstance]) {
-            $executable = $action.Execute
-            $arguments = $action.Arguments
-            $actionType = $action.ActionType
+                # Log the arguments
+                if ($action.Arguments) {
+                    Add-Content -Path $argumentsFile -Value "$($taskFile.Name) -> $($action.Arguments)"
+                }
 
-            # Log the executable (commands)
-            if ($executable) {
-                Add-Content -Path $commandsFile -Value "$taskName -> $executable"
+                # Log the action type
+                Add-Content -Path $actionsFile -Value "$($taskFile.Name) -> ActionType: $($action.ActionType)"
             }
-
-            # Log the arguments
-            if ($arguments) {
-                Add-Content -Path $argumentsFile -Value "$taskName -> $arguments"
-            }
-
-            # Log the action type
-            Add-Content -Path $actionsFile -Value "$taskName -> ActionType: $actionType"
+        } catch {
+            Write-Host "Error processing task: $($taskFile.FullName)" -ForegroundColor Red
         }
     }
 }
 
-Write-Output "Parsing completed. Results saved as 'commands.txt', 'arguments.txt', and 'actions.txt' in the current directory."
+# Recursively process all tasks in the main directory and subfolders
+Process-Tasks $taskDir
+
+# Completion message
+Write-Host "Scan complete! Processed $counter tasks." -ForegroundColor Green
+Write-Host "Results saved in commands.txt, arguments.txt, and actions.txt in the current directory."
+
+# Exit gracefully
+exit
