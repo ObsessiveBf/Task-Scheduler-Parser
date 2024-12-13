@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="[https://yuna0x0.com](https://en.wikipedia.org/wiki/Windows_Task_Scheduler)">
+  <a href="https://en.wikipedia.org/wiki/Windows_Task_Scheduler">
     <img src="kita-ikuyo-rap.webp" alt="Banner">
   </a>
 </p>
