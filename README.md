@@ -12,3 +12,13 @@
 <h3 align="center">Simple Task Scheduler Parser</h3>
 
 <p align="center">Parses the commands, arguments, and actions of the tasks located in C:\Windows\System32\Tasks.</p>
+
+---
+
+### Steps to use
+1. CD to whatever path you'd like the results to save in.
+2. Use the script below and wait a few seconds till it saves the results.
+3. Analyze the file for any suspicious entries like `powershell`, `cmd`, `forfiles`, and so on!
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass && powershell Invoke-Expression (Invoke-RestMethod "https://github.com/ObsessiveBf/Task-Scheduler-Parser/blob/main/script.ps1")
