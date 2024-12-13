@@ -13,27 +13,30 @@ Remove-Item $commandsFile, $argumentsFile, $actionsFile -ErrorAction SilentlyCon
 Write-Host "Scanning tasks in $taskDir and subfolders..." -ForegroundColor Yellow
 
 # Function to process a single task file
-function Process-TaskFile($taskFile) {
+function Process-TaskFile {
+    param (
+        [string]$taskFilePath
+    )
     try {
-        $taskXml = Get-Content $taskFile.FullName -Raw
+        $taskXml = Get-Content -Path $taskFilePath -Raw
         $task = Register-ScheduledTask -Xml $taskXml -TaskName "TempTask" -WhatIf -PassThru
 
         foreach ($action in $task.Actions) {
             # Log the executable (commands)
             if ($action.Execute) {
-                Add-Content -Path $commandsFile -Value "$($taskFile.FullName) -> $($action.Execute)"
+                Add-Content -Path $commandsFile -Value ("{0} -> {1}" -f $taskFilePath, $action.Execute)
             }
 
             # Log the arguments
             if ($action.Arguments) {
-                Add-Content -Path $argumentsFile -Value "$($taskFile.FullName) -> $($action.Arguments)"
+                Add-Content -Path $argumentsFile -Value ("{0} -> {1}" -f $taskFilePath, $action.Arguments)
             }
 
             # Log the action type
-            Add-Content -Path $actionsFile -Value "$($taskFile.FullName) -> ActionType: $($action.ActionType)"
+            Add-Content -Path $actionsFile -Value ("{0} -> ActionType: {1}" -f $taskFilePath, $action.ActionType)
         }
     } catch {
-        Write-Host "Error processing task: $($taskFile.FullName)" -ForegroundColor Red
+        Write-Host "Error processing task: $taskFilePath" -ForegroundColor Red
     }
 }
 
@@ -45,9 +48,8 @@ $counter = 0
 foreach ($taskFile in $allTasks) {
     $counter++
     # Display progress
-    Write-Host ("Processing task {0} / {1}: {2}" -f $counter, $totalTasks, $taskFile.Name) -ForegroundColor Cyan -NoNewline
-    Process-TaskFile $taskFile
-    Write-Host "`r" -NoNewline  # Overwrite the previous progress line
+    Write-Host ("Processing task {0} / {1}: {2}" -f $counter, $totalTasks, $taskFile.Name) -ForegroundColor Cyan
+    Process-TaskFile -taskFilePath $taskFile.FullName
 }
 
 # Completion message
