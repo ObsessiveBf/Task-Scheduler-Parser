@@ -7,9 +7,8 @@
 <h1 align="center">A <a href="https://en.wikipedia.org/wiki/Windows_Task_Scheduler">Task Scheduler Parser</a>!</h1>
 <p align="center">
   <a href="https://en.wikipedia.org/wiki/Windows_Task_Scheduler">
-    <img src="https://yuna0x0.com/88x31.webp" alt="ObsessiveBf">
   </a>
 </p>
-<h3 align="center">Welcome to my GitHub profile :3</h3>
+<h3 align="center">Simple Task Scheduler Parser</h3>
 
-<p align="center">❤ I'm currently working on Software, Anime / Manga, Game Dev, and Content Creation.</p>
+<p align="center">Parses the commands, arguments, and actions of the tasks located in C:\Windows\System32\Tasks.</p>
