@@ -22,4 +22,4 @@
 4. Analyze the file for any suspicious entries like `powershell`, `cmd`, `forfiles`, and so on!
 
 ```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass && powershell Invoke-Expression (Invoke-RestMethod "https://github.com/ObsessiveBf/Task-Scheduler-Parser/blob/main/script.ps1")
+powershell -Command "Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; Invoke-Expression (Invoke-RestMethod 'https://raw.githubusercontent.com/ObsessiveBf/Task-Scheduler-Parser/main/script.ps1')"
