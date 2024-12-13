@@ -9,44 +9,50 @@ $actionsFile = ".\actions.txt"
 # Clear previous output
 Remove-Item $commandsFile, $argumentsFile, $actionsFile -ErrorAction SilentlyContinue
 
-# Loading sequence
+# Loading sequence message
 Write-Host "Scanning tasks in $taskDir and subfolders..." -ForegroundColor Yellow
-$counter = 0
 
-# Function to process tasks in a folder
-function Process-Tasks($folder) {
-    $tasks = Get-ChildItem -Path $folder -Recurse -File
+# Function to process a single task file
+function Process-TaskFile($taskFile) {
+    try {
+        $taskXml = Get-Content $taskFile.FullName -Raw
+        $task = Register-ScheduledTask -Xml $taskXml -TaskName "TempTask" -WhatIf -PassThru
 
-    foreach ($taskFile in $tasks) {
-        try {
-            $task = Register-ScheduledTask -Xml (Get-Content $taskFile.FullName | Out-String) -TaskName "TempTask" -WhatIf -PassThru
-            foreach ($action in $task.Actions) {
-                $counter++
-                # Log the executable (commands)
-                if ($action.Execute) {
-                    Add-Content -Path $commandsFile -Value "$($taskFile.Name) -> $($action.Execute)"
-                }
-
-                # Log the arguments
-                if ($action.Arguments) {
-                    Add-Content -Path $argumentsFile -Value "$($taskFile.Name) -> $($action.Arguments)"
-                }
-
-                # Log the action type
-                Add-Content -Path $actionsFile -Value "$($taskFile.Name) -> ActionType: $($action.ActionType)"
+        foreach ($action in $task.Actions) {
+            # Log the executable (commands)
+            if ($action.Execute) {
+                Add-Content -Path $commandsFile -Value "$($taskFile.FullName) -> $($action.Execute)"
             }
-        } catch {
-            Write-Host "Error processing task: $($taskFile.FullName)" -ForegroundColor Red
+
+            # Log the arguments
+            if ($action.Arguments) {
+                Add-Content -Path $argumentsFile -Value "$($taskFile.FullName) -> $($action.Arguments)"
+            }
+
+            # Log the action type
+            Add-Content -Path $actionsFile -Value "$($taskFile.FullName) -> ActionType: $($action.ActionType)"
         }
+    } catch {
+        Write-Host "Error processing task: $($taskFile.FullName)" -ForegroundColor Red
     }
 }
 
-# Recursively process all tasks in the main directory and subfolders
-Process-Tasks $taskDir
+# Initialize counter and scan recursively
+$allTasks = Get-ChildItem -Path $taskDir -Recurse -File
+$totalTasks = $allTasks.Count
+$counter = 0
+
+foreach ($taskFile in $allTasks) {
+    $counter++
+    # Display progress
+    Write-Host "Processing task $counter / $totalTasks: $($taskFile.Name)" -ForegroundColor Cyan -NoNewline
+    Process-TaskFile $taskFile
+    Write-Host "`r" -NoNewline  # Overwrite the previous progress line
+}
 
 # Completion message
-Write-Host "Scan complete! Processed $counter tasks." -ForegroundColor Green
+Write-Host "`nScan complete! Processed $counter tasks." -ForegroundColor Green
 Write-Host "Results saved in commands.txt, arguments.txt, and actions.txt in the current directory."
 
-# Exit gracefully
+# Allow user to continue typing in the command prompt
 exit
