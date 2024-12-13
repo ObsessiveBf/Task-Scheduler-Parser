@@ -45,7 +45,7 @@ $counter = 0
 foreach ($taskFile in $allTasks) {
     $counter++
     # Display progress
-    Write-Host "Processing task $counter / $totalTasks: $($taskFile.Name)" -ForegroundColor Cyan -NoNewline
+    Write-Host ("Processing task {0} / {1}: {2}" -f $counter, $totalTasks, $taskFile.Name) -ForegroundColor Cyan -NoNewline
     Process-TaskFile $taskFile
     Write-Host "`r" -NoNewline  # Overwrite the previous progress line
 }
