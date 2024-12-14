@@ -6,9 +6,10 @@ $commandsFile = ".\commands.txt"
 $argumentsFile = ".\arguments.txt"
 $actionsFile = ".\actions.txt"
 $detectionsFile = ".\detections.txt"
+$errorsFile = ".\errors.txt"
 
 
-Remove-Item $commandsFile, $argumentsFile, $actionsFile, $detectionsFile -ErrorAction SilentlyContinue
+Remove-Item $commandsFile, $argumentsFile, $actionsFile, $detectionsFile, $errorsFile -ErrorAction SilentlyContinue
 
 
 $suspiciousKeywords = @(
@@ -32,31 +33,36 @@ function Process-TaskFile {
         [string]$taskFilePath
     )
     try {
+
         $taskXml = Get-Content -Path $taskFilePath -Raw
-        $task = Register-ScheduledTask -Xml $taskXml -TaskName "TempTask" -WhatIf -PassThru
+        $task = [xml]$taskXml
 
-        foreach ($action in $task.Actions) {
 
-            if ($action.Execute) {
-                Add-Content -Path $commandsFile -Value ("{0} -> {1}" -f $taskFilePath, $action.Execute)
+        $actions = $task.Task.Actions.Exec
+        foreach ($action in $actions) {
+            $command = $action.Command
+            $arguments = $action.Arguments
+
+
+            if ($command) {
+                Add-Content -Path $commandsFile -Value ("{0} -> {1}" -f $taskFilePath, $command)
             }
 
 
-            if ($action.Arguments) {
-                Add-Content -Path $argumentsFile -Value ("{0} -> {1}" -f $taskFilePath, $action.Arguments)
+            if ($arguments) {
+                Add-Content -Path $argumentsFile -Value ("{0} -> {1}" -f $taskFilePath, $arguments)
             }
 
-
-            Add-Content -Path $actionsFile -Value ("{0} -> ActionType: {1}" -f $taskFilePath, $action.ActionType)
 
             foreach ($keyword in $suspiciousKeywords) {
-                if ($action.Execute -match $keyword -or $action.Arguments -match $keyword) {
+                if ($command -match $keyword -or $arguments -match $keyword) {
                     Add-Content -Path $detectionsFile -Value ("{0} -> Detected keyword: {1}" -f $taskFilePath, $keyword)
                 }
             }
         }
     } catch {
-        Write-Host ("Error processing task: {0}" -f $taskFilePath) -ForegroundColor Red
+
+        Add-Content -Path $errorsFile -Value ("Error processing {0}: {1}" -f $taskFilePath, $_.Exception.Message)
     }
 }
 
@@ -74,7 +80,7 @@ foreach ($taskFile in $allTasks) {
 
 
 Write-Host "`nScan complete! Processed $counter tasks." -ForegroundColor Green
-Write-Host "Results saved in commands.txt, arguments.txt, actions.txt, and detections.txt in the current directory."
+Write-Host "Results saved in commands.txt, arguments.txt, actions.txt, detections.txt, and errors.txt in the current directory."
 
 
 exit
