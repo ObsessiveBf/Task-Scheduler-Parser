@@ -58,9 +58,10 @@ function Process-TaskFile {
                 Add-Content -Path $argumentsFile -Value ("{0} -> {1}" -f $taskFilePath, $arguments)
             }
 
-            # Check for suspicious keywords
+            # Check for suspicious keywords (exact match)
             foreach ($keyword in $suspiciousKeywords) {
-                if ($command -match $keyword -or $arguments -match $keyword) {
+                $regex = "\b$keyword\b" # Match whole word only
+                if ($command -match $regex -or $arguments -match $regex) {
                     Add-Content -Path $detectionsFile -Value ("{0} -> Detected keyword: {1}" -f $taskFilePath, $keyword)
                 }
             }
